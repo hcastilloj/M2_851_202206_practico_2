@@ -1,8 +1,12 @@
 ---
 title: 'M2.851 - Tipología y ciclo de vida de los datos: Practico 2'
-author: "Autor: Héctor Alejandro Castillo Jeria"
+author: "Autores: Gabriel Álvarez Morgado y Héctor Alejandro Castillo Jeria"
 date: "Junio 2022"
 output:
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+  word_document: default
   html_document:
     highlight: default
     number_sections: yes
@@ -11,10 +15,6 @@ output:
     toc_depth: 2
     includes:
       in_header: UOC-header.html
-  word_document: default
-  pdf_document:
-    highlight: zenburn
-    toc: yes
 editor_options: 
   markdown: 
     wrap: 72
