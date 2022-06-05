@@ -4,9 +4,7 @@ Practico Número 2, se elabora un caso práctico orientado a aprender a identifi
 
 Compentencias:
 
-En esta práctica se desarrollan las siguientes competencias del Máster de Data Science:
-
-
+    En esta práctica se desarrollan las siguientes competencias del Máster de Data Science:
     Capacidad de analizar un problema en el nivel de abstracción adecuado a cada situación y aplicar las habilidades y conocimientos adquiridos para abordarlo y resolverlo.
 
     Capacidad para aplicar las técnicas específicas de tratamiento de datos (integración, transformación, limpieza y validación) para su posterior análisis
