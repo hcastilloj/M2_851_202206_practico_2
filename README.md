@@ -4,10 +4,10 @@
 Héctor Alejandro Castillo Jeria, alejandro.castillo.jeria@gmail.com
 
 # Acerca de este Proyecto.
-    Este proyeccto corresponde a la Práctica número 2 de la asignatura: "Tipologia y ciclo de vida de los datos".
+    Este proyecto corresponde a la Práctica número 2 de la asignatura: "Tipologia y ciclo de vida de los datos".
     Asignatura: Tipologia y ciclo de vida de los datos.
     Master de Data Science.
-    Universitat Oberta of Catalunya.
+    Universitat Oberta de Catalunya.
 
 Practico Número 2.
 
