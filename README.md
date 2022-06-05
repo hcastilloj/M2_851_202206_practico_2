@@ -9,7 +9,8 @@ Héctor Alejandro Castillo Jeria, alejandro.castillo.jeria@gmail.com
     Master de Data Science.
     Universitat Oberta of Catalunya.
 
-Practico Número 2, se elabora un caso práctico orientado a aprender a identificar los datos relevantes para un proyecto analítico y usar las herramientas de integración, limpieza, validación y análisis de las mismas
+Practico Número 2.
+    se elabora un caso práctico orientado a aprender a identificar los datos relevantes para un proyecto analítico y usar las herramientas de integración, limpieza, validación y análisis de las mismas
 
 Compentencias:
 
