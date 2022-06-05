@@ -1,6 +1,7 @@
 # M2_851_202206_practico_2
 # Sobrevivientes del RMS Titanic
-# Autor
+# Autores
+Gabriel Álvarez Morgado, galvarezm86@gmail.com
 Héctor Alejandro Castillo Jeria, alejandro.castillo.jeria@gmail.com
 
 # Acerca de este Proyecto.
