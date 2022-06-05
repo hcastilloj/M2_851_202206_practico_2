@@ -1,4 +1,13 @@
 # M2_851_202206_practico_2
+# Sobrevivientes del RMS Titanic
+# Autor
+Héctor Alejandro Castillo Jeria, alejandro.castillo.jeria@gmail.com
+
+# Acerca de este Proyecto.
+    Este proyeccto corresponde a la Práctica número 2 de la asignatura: "Tipologia y ciclo de vida de los datos".
+    Asignatura: Tipologia y ciclo de vida de los datos.
+    Master de Data Science.
+    Universitat Oberta of Catalunya.
 
 Practico Número 2, se elabora un caso práctico orientado a aprender a identificar los datos relevantes para un proyecto analítico y usar las herramientas de integración, limpieza, validación y análisis de las mismas
 
