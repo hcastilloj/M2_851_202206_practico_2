@@ -823,8 +823,15 @@ grid.arrange(plotTrbySib1,plotTrbySib2,plotTrbyPar1,plotTrbyPar2,ncol=2)
 
 Puede visualizarse que el modelo predice que los sobrevivientes serán principalmente mujeres, menores de 20 años, que poseen boletos de primera clase, con familiares a bordo y/o que o embarcaron en Queenstown.
 
+Finalmente, exportaremos ambos dataframes en archivos csv
+
+```{r}
+write.csv(trainData,"trainMod.csv")
+write.csv(testData,"testMod.csv")
+```
 
 
+## Tabla de contribuciones
 
 
 
