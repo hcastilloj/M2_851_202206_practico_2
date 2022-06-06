@@ -18,6 +18,7 @@ output:
 editor_options: 
   markdown: 
     wrap: 72
+  chunk_output_type: console
 ---
 
 ```{r setup, include=FALSE}
@@ -78,39 +79,34 @@ Además, se pretende crear modelos predictivos para emplearlos en el set de dato
 
 ## Comprensión de los datos.
 
-La muestra con la que trabajaremos corresponde a los datos de pasajeros del **RMS Titanic**, famoso transatlantico que sufre un accidente y se hunde en us viaje inaugural, el día 15 de Abril de 1912, donde fallecen 1502 de sus 2224 pasajeros y tripulantes.
+La muestra con la que trabajaremos corresponde a los datos de pasajeros del **RMS Titanic**, famoso transatlantico que sufre un accidente y se hunde en su viaje inaugural, el día 15 de Abril de 1912, donde fallecen 1502 de sus 2224 pasajeros y tripulantes.
 
-Este juego de datos se encuentra en los archivo **train.csv** y **test.csv** ambos archivos, obtenido desde Kaggle **"Titanic - Machine Learning from Disaster"** <https://www.kaggle.com/competitions/titanic>
+Este juego de datos se encuentra en los archivos **train.csv** y **test.csv** ambos archivos, obtenido desde Kaggle **"Titanic - Machine Learning from Disaster"** <https://www.kaggle.com/competitions/titanic>
 
 El archivo **train.csv** posee la información de los pasajeros, lo que permitirá entrenar nuestro modelo, para emplear luego el archivo **test.csv** que contiene información de pasajeros, para predecir si los pasajeros de esta muestra sobreviven al hundimiento del Titanic, de acuerdo a ciertos factores que obtendremos en el desarrollo de práctico.
 
-
-
 ## Carga de librerias y fichero de datos.
 
-Instalamos y cargamos las librerías ggplot2 y dplry.
+Instalamos y cargamos las librerías necesarias para desarrollar el práctico.
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-# https://cran.r-project.org/web/packages/ggplot2/index.html
-if (!require('ggplot2')) install.packages('ggplot2'); library('ggplot2')
-# https://cran.r-project.org/web/packages/dplyr/index.html
-if (!require('dplyr')) install.packages('dplyr'); library('dplyr')
 
-if(!require(grid)){
-    install.packages('grid', repos='http://cran.us.r-project.org')
-    library(grid)
-}
-if(!require(gridExtra)){
-    install.packages('gridExtra', repos='http://cran.us.r-project.org')
-    library(gridExtra)
+librerias = c("ggplot2", "dplyr", "knitr", "grid", "gridExtra", "ggstatsplot",
+              "car","rpart","rpart.plot","caret")
+
+for (lib in librerias){
+  if (!require(lib, character.only = TRUE)){
+    install.packages(lib)
+    library(lib, character.only = TRUE)
+  } 
 }
 ```
 
 Cargamos los ficheros de datos *train.csv* y *test.csv*.
 
 ```{r}
-trainData <- read.csv('train.csv',stringsAsFactors = FALSE)
-testData  <- read.csv('test.csv' ,stringsAsFactors = FALSE)
+trainData = read.csv('train.csv',stringsAsFactors = FALSE)
+testData  = read.csv('test.csv' ,stringsAsFactors = FALSE)
 
 ```
 
@@ -126,28 +122,19 @@ columTest  = length(testData)
 
 ## Exploración de la base de datos de **test**
 
-Calcularemos las dimensiones de nuestra base de datos y analizaremos qué tipos de atributos tenemos. Mediante la función dim(). 
+Calcularemos las dimensiones de nuestra base de datos y analizaremos qué tipos de atributos tenemos.
 
 ```{r}
 dim(testData)
 ```
 
-Como parte de la preparación de los datos, verificaremos si hay valores missing.
-
-```{r}
-missing <- testData[is.na(testData),]
-dim(missing)
-```
-
+Mediante la función dim(), vemos que tenemos `r filasTest` registros (filas) que se corresponden a las reseñas y `r columTest` variables (columnas) que los caracterizan.
 
 Verificamos la estructura del juego de datos principal.
 
 ```{r}
 str(testData)
 ```
-
-En nuestra carga de datos, vemos que tenemos `r filasTest` registros (filas) que se
-corresponden a las reseñas y `r columTest` variables (columnas) que los caracterizan.
 
 Revisamos la descripción de las variables contenidas al fichero y si los
 tipos de variable se corresponde al que hemos cargado:
@@ -168,28 +155,27 @@ tipos de variable se corresponde al que hemos cargado:
  **Embarked** | Puerto de embarque (C=Cherbourg; Q=Queenstown; S=Southampton) 
 
 
-
-### Validación de la data **test**.
-
 Obtendremos estadísticas básicas, para luego trabajar con los atributos que no poseen valores o se encuentran vacíos.
 
 Estadísticas básicas
+
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 summary(testData)
 ```
 
-Verificación de valores vacíos.
+Como parte de la exploración de los datos, verificaremos si hay valores perdidos.
 
 ```{r}
-colSums(is.na(testData))
-colSums(testData=="")
+colSums(is.na(testData) | testData=="")
 ```
+
+Podemos observar que hay 86 datos faltantes en la variable Age, 327 en el atributo cabin y 1 en Fare.
 
 Las estadísticas obtenidas indican lo siguiente sobre la data:
 
-> El atributo **Age**, posee 86 datos vacíos, como este dato es relevante y puede influir en el resultado del análisis, el registro será eliminado.
+> El atributo **Age**, posee 86 datos vacíos, como este dato es relevante, el atributo no será eliminado y serán imputados los valores faltantes según el promedio de la edad de los pasajeros, dependiendo del sexo, la clase, su estado de sobrevivencia y las variables familiares SibSp y Parch.
 > 
-> El atributo **Fare**, posee 1 dato vacío, este dato no es relevante y se cargará el valor 0 por defecto.
+> El atributo **Fare**, posee 1 dato vacío, se cargará el promedio por defecto.
 > 
 > El atributo **Cabin**, posee 327 datos vacíos, este dato no es relevante y se eliminará el atributo.
 > 
@@ -198,22 +184,15 @@ Las estadísticas obtenidas indican lo siguiente sobre la data:
 > El atributo **PassengerId**, este dato no es relevante y se eliminará el atributo.
 
 
-
 ## Exploración de la base de datos de **train**
 
-Calcularemos las dimensiones de nuestra base de datos y analizaremos qué tipos de atributos tenemos. Mediante la función dim(). Obtenemos que disponemos de `r length(trainData$PassengerId)` registros (filas) y `r length(trainData)` variables (columnas). 
+Calcularemos las dimensiones de nuestra base de datos y analizaremos qué tipos de atributos tenemos.
 
 ```{r}
 dim(trainData)
 ```
 
-Como parte de la preparación de los datos, verificaremos si hay valores missing.
-
-```{r}
-missing <- trainData[is.na(trainData),]
-dim(missing)
-```
-
+Mediante la función dim(). Obtenemos que disponemos de `r length(trainData$PassengerId)` registros (filas) y `r length(trainData)` variables (columnas). 
 
 Verificamos la estructura del juego de datos principal.
 
@@ -221,8 +200,6 @@ Verificamos la estructura del juego de datos principal.
 str(trainData)
 ```
 
-En nuestra carga de datos, vemos que tenemos `r filasTrain` registros (filas) que se
-corresponden a las reseñas y `r columTrain` variables (columnas) que los caracterizan.
 
 Revisamos la descripción de las variables contenidas al fichero y si los
 tipos de variable se corresponde al que hemos cargado:
@@ -243,9 +220,6 @@ tipos de variable se corresponde al que hemos cargado:
  **Embarked** | Puerto de embarque (C=Cherbourg; Q=Queenstown; S=Southampton) 
 
 
-
-### Validación de la data **train**.
-
 Obtendremos estadísticas básicas, para luego trabajar con los atributos que no poseen valores o se encuentran vacíos.
 
 Estadísticas básicas
@@ -254,21 +228,20 @@ Estadísticas básicas
 summary(trainData)
 ```
 
-
-Estadísticas de valores vacíos.
+Como parte de la exploración de los datos, verificaremos si hay valores perdidos.
 
 ```{r}
-colSums(is.na(trainData))
-colSums(trainData=="")
+colSums(is.na(trainData) | trainData=="")
 ```
 
-Las estadísticas obtenidas indican lo siguiente sobre la data:
+Podemos observar que hay 177 datos faltantes en la variable Age, 687 en el atributo cabin y 2 en Embarked.
 
-> El atributo **Age**, posee 177 datos vacíos, como este dato es relevante y puede influir en el resultado del análisis, el registro será eliminado.
+
+> El atributo **Age**, posee 177 datos vacíos, como este dato es relevante, el atributo no será eliminado y serán imputados los valores faltantes según el promedio de la edad de los pasajeros, dependiendo del sexo, la clase, su estado de sobrevivencia y las variables familiares SibSp y Parch.
 > 
 > El atributo **Cabin**, posee 687 datos vacíos, este dato no es relevante y se eliminará el atributo.
 > 
-> El atributo **Embarked**, posee 2 datos vacíos, este dato no es relevante y se cargará un valor por defecto.
+> El atributo **Embarked**, posee 2 datos vacíos, se cargará un valor por defecto correspondiente a la moda de la variable.
 > 
 > El atributo **Name**, este dato no es relevante y se eliminará el atributo.
 > 
@@ -286,28 +259,164 @@ En este paso realizaremos la normalización de algunos atributos, la clusterizac
 
 ### Reemplazo de valores nulos o vacíos.
 
+Reemplazo de la edad en trainData
+
 ```{r}
-testData$Age[is.na(testData$Age)] <- mean(testData$Age[is.na(testData$Age)==FALSE])
-testData$Fare[is.na(testData$Fare)] <- 0
+for(i in seq(nrow(trainData))){
+  if(is.na(trainData$Age[i])){
+    sim_age = trainData$Age[trainData$Survived==trainData$Survived[i] &
+                              trainData$Pclass==trainData$Pclass[i] &
+                              trainData$Sex==trainData$Sex[i] &
+                              trainData$SibSp==trainData$SibSp[i] &
+                              trainData$Parch==trainData$Parch[i]]
+    if(is.na(mean(sim_age, na.rm = TRUE))){
+      trainData$Age[i] = mean(trainData$Age, na.rm = TRUE)
+    } else {
+      trainData$Age[i] = mean(sim_age, na.rm = TRUE)
+    }
+  }
+}
+```
+
+Reemplazo de la edad en testData
+
+```{r}
+for(i in seq(nrow(testData))){
+  if(is.na(testData$Age[i])){
+    sim_age = testData$Age[testData$Survived==testData$Survived[i] &
+                              testData$Pclass==testData$Pclass[i] &
+                              testData$Sex==testData$Sex[i] &
+                              testData$SibSp==testData$SibSp[i] &
+                              testData$Parch==testData$Parch[i]]
+    if(is.na(mean(sim_age, na.rm = TRUE))){
+      testData$Age[i] = mean(testData$Age, na.rm = TRUE)
+    } else {
+      testData$Age[i] = mean(sim_age, na.rm = TRUE)
+    }
+  }
+}
+```
+
+Reemplazo de la variable Embarked en trainData y de la variable Fare en testData
+
+```{r}
+trainData$Embarked[trainData$Embarked==""] = "S"
+testData$Fare[is.na(testData$Fare)] = mean(testData$Fare, na.rm = TRUE)
+```
+
+Verificación de corrección de valores vacíos en **train** y **test**.
+
+```{r}
+colSums(is.na(testData) | testData=="")
+colSums(is.na(trainData) | trainData=="")
+```
+
+Se visualizan valores faltantes solo en la variable Cabin que será eliminada posteriormente.
+
+## Identificación de valores atípicos en trainData
+
+Se observará la presencia de valores extremos o atípicos en las variables numéricas a través del método propuesto por Tukey. Se partirá con la edad:
+
+```{r}
+q = quantile(trainData$Age,seq(0.25,0.75,0.25))
+RIC =  q[3] - q[1]
+LI = q[1] - 1.5*RIC
+LS = q[3] + 1.5*RIC
+
+atip = length(trainData$Age[trainData$Age<LI | trainData$Age>LS])
+
+paste0("Para la variable Age, hay ", atip, " valores atípicos que se encuentran fuera del intervalo (",LI,",",LS,")")
+```
+
+Hay 28 datos atípicos en la variable Age, sin embargo se ha decidido no eliminarlos ni trabajarlos como valroes faltantes, puesto que corresponden a edades correctas que posiblemente hayan tenido algunas personas. Como la gran mayoría de los pasajeros eran personas jóvenes, se identifica como valores atípicos aquellas edades más avanzadas.
+
+Ahora pasaremos a las variables familiares SibSP y Parch
+
+```{r}
+q = quantile(trainData$SibSp,seq(0.25,0.75,0.25))
+RIC =  q[3] - q[1]
+LI = q[1] - 1.5*RIC
+LS = q[3] + 1.5*RIC
+
+atip = length(trainData$SibSp[trainData$SibSp<LI | trainData$SibSp>LS])
+
+paste0("Para la variable SibSp, hay ", atip, " valores atípicos que se encuentran fuera del intervalo (",LI,",",LS,")")
+
+q = quantile(trainData$Parch,seq(0.25,0.75,0.25))
+RIC =  q[3] - q[1]
+LI = q[1] - 1.5*RIC
+LS = q[3] + 1.5*RIC
+
+atip = length(trainData$Parch[trainData$Parch<LI | trainData$Parch>LS])
+
+paste0("Para la variable Parch, hay ", atip, " valores atípicos que se encuentran fuera del intervalo (",LI,",",LS,")")
+```
+
+Aquí nuevamente ocurre un fenómeno interesante. Como más del 75% de los pasajeros no tenía hijos a bordo, el método de Tukey identifica como valor atípico aquellos casos que sí tienen hijos. No obstante, los valores que posee este atributo son presumiblemente correctos, por lo que no serán eliminados. Misma política fue aplicada para la variable SibSp. 
+
+Finalmente, revisaremos la variable Fare
+
+```{r}
+q = quantile(trainData$Fare,seq(0.25,0.75,0.25))
+RIC =  q[3] - q[1]
+LI = q[1] - 1.5*RIC
+LS = q[3] + 1.5*RIC
+
+atip = length(trainData$Fare[trainData$Fare<LI | trainData$Fare>LS])
+
+paste0("Para la variable Fare, hay ", atip, " valores atípicos que se encuentran fuera del intervalo (",LI,",",LS,")")
+
+```
+
+En esta variable se identifican 116 valores atípicos correspondientes a los valores más altos. También se puede presumir que estos datos son identificados como atípicos pues son muy pocos los boletos que tenían un alto precio. SIn embargo no son valores erróneos y se mantendran como están.
+
+## Identificación de valores atípicos en testData
+
+Para el conjunto de datos de prueba, ocurren las mismas situaciones que para el conjunto de datos de entrenamiento, por lo que se tomaron las mismas decisiones de mantención de la información entregada en el dataset.
+
+```{r}
+q = quantile(testData$Age,seq(0.25,0.75,0.25))
+RIC =  q[3] - q[1]
+LI = q[1] - 1.5*RIC
+LS = q[3] + 1.5*RIC
+
+atip = length(testData$Age[testData$Age<LI | testData$Age>LS])
+
+paste0("Para la variable Age, hay ", atip, " valores atípicos que se encuentran fuera del intervalo (",LI,",",LS,")")
+
+q = quantile(testData$SibSp,seq(0.25,0.75,0.25))
+RIC =  q[3] - q[1]
+LI = q[1] - 1.5*RIC
+LS = q[3] + 1.5*RIC
+
+atip = length(testData$SibSp[testData$SibSp<LI | testData$SibSp>LS])
+
+paste0("Para la variable SibSp, hay ", atip, " valores atípicos que se encuentran fuera del intervalo (",LI,",",LS,")")
+
+q = quantile(testData$Parch,seq(0.25,0.75,0.25))
+RIC =  q[3] - q[1]
+LI = q[1] - 1.5*RIC
+LS = q[3] + 1.5*RIC
+
+atip = length(testData$Parch[testData$Parch<LI | testData$Parch>LS])
+
+paste0("Para la variable Parch, hay ", atip, " valores atípicos que se encuentran fuera del intervalo (",LI,",",LS,")")
+
+q = quantile(testData$Fare,seq(0.25,0.75,0.25))
+RIC =  q[3] - q[1]
+LI = q[1] - 1.5*RIC
+LS = q[3] + 1.5*RIC
+
+atip = length(testData$Fare[testData$Fare<LI | testData$Fare>LS])
+
+paste0("Para la variable Fare, hay ", atip, " valores atípicos que se encuentran fuera del intervalo (",LI,",",LS,")")
 
 ```
 
 
+### Eliminación, creación y modificación de atributos.
 
-### Eliminación de registros con valores nulos o vacíos.
-
-```{r}
-testData <- subset(testData, !is.na(testData$Age))
-trainData <- subset(trainData, !is.na(trainData$Age))
-
-trainData <- subset(trainData, !is.na(trainData$Embarked))
-trainData <- subset(trainData, trainData$Embarked!="")
-
-```
-
-
-
-### Eliminación de atributos.
+Se eliminarán las variables que no serán consideradas en los análisis.
 
 ```{r}
 testData  <- subset( testData, select = -c(PassengerId, Cabin, Name, Ticket ) )
@@ -315,48 +424,101 @@ trainData <- subset( trainData, select = -c(PassengerId, Cabin, Name, Ticket ) )
 
 ```
 
-
-
-Verificación de corrección de valores vacíos **test**.
-
-```{r}
-colSums(is.na(testData))
-colSums(testData=="")
-```
-
-
-Verificación de corrección de valores vacíos **train**.
-
-```{r}
-colSums(is.na(trainData))
-colSums(trainData=="")
-```
-
-
-### Creación de nuevos atributos.
-
-Agregaremos un nuevo campo a los datos. Este campo contendrá el valor de la edad discretitzada con un método simple de intervalos de igual amplitud.
+Agregaremos un nuevo campo a los datos. Este campo contendrá el valor de la edad discretizada con un método simple de intervalos de igual amplitud. Algunas edades se encuentran precisadas con números decimales. Se aplicará un redondeo para tener un atributo con solo números enteros
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-
-summary(trainData[,"Age"])
-summary(testData[,"Age"])
+trainData["Age"] = floor(trainData["Age"])
+testData["Age"] = floor(testData["Age"])
 ```
+
+Y se observará nuevamente las estadísticas de esta variable en ambos conjuntos de datos para realizar correctamente la discretización.
+
+```{r}
+summary(trainData$Age)
+summary(testData$Age)
+```
+
 
 Discretizamos con intervalos.
 
 ```{r}
-trainData["Rango_Age"] <- cut(trainData$Age, breaks = c(0,10,20,30,40,50,60,70,80,110), labels = c("0-9","10-19","20-29","30-39","40-49","50-59","60-69","70-79","80-100"))
-testData["Rango_Age"]  <- cut(testData$Age , breaks = c(0,10,20,30,40,50,60,70,80,100), labels = c("0-9","10-19","20-29","30-39","40-49","50-59","60-69","70-79","80-100"))
+trainData["Rango_Age"] = cut(trainData$Age,
+                             breaks = c(-1,10,20,30,40,50,60,70,80),
+                             labels = c("0-10","11-20","21-30","31-40",
+                                        "41-50","51-60","61-70","71-80"))
+testData["Rango_Age"]  <- cut(testData$Age,
+                              breaks = c(-1,10,20,30,40,50,60,70,80),
+                              labels = c("(0-10","11-20","21-30","31-40",
+                                         "41-50","51-60","61-70","71-80"))
+```
 
-trainData["Sobreviviente"] <-""
-trainData$Sobreviviente[trainData$Survived=="1"] <- "SI"
-trainData$Sobreviviente[trainData$Survived=="0"] <- "NO"
+También se dicotomizarán las variables familiares, dejándolas simplemente en viajaba con/sin hermanos o cónyuges y viajaba con/sin hijos o padres.
 
-testData  <- subset( testData , select = -c( Age ) )
-trainData <- subset( trainData, select = -c( Age, Survived ) )
+```{r}
+trainData$SibSp[trainData$SibSp!=0] = 1
+trainData$Parch[trainData$Parch!=0] = 1
+testData$SibSp[testData$SibSp!=0] = 1
+testData$Parch[testData$Parch!=0] = 1
+
+trainData$SibSp = factor(trainData$SibSp,
+                         levels=c(0,1),
+                         labels= c("Sin hermanos ni cónyuges",
+                                   "Con hermanos o cónyuges"))
+trainData$Parch = factor(trainData$Parch,
+                         levels=c(0,1),
+                         labels= c("Sin hijos ni padres",
+                                   "Con hijos o padres"))
+testData$SibSp = factor(testData$SibSp,
+                        levels=c(0,1),
+                        labels= c("Sin hermanos ni cónyuges",
+                                  "Con hermanos o cónyuges"))
+testData$Parch = factor(testData$Parch,
+                        levels=c(0,1),
+                        labels= c("Sin hijos ni padres",
+                                  "Con hijos o padres"))
+
 
 ```
+
+
+Finalmente, transformaremos algunas variables para que sean de tipo factor.
+
+```{r}
+trainData$Sobreviviente = factor(trainData$Survived,
+                                 levels = c(0,1),
+                                 labels = c("No","Sí"))
+trainData$Survived = NULL
+trainData$Pclass = factor(trainData$Pclass,
+                          levels = c(1,2,3),
+                          labels = c("Primera clase",
+                                     "Segunda clase",
+                                     "Tercera clase"))
+trainData$Sex = factor(trainData$Sex,
+                       levels = c("male","female"),
+                       labels = c("Masculino", "Femenino"))
+trainData$Embarked = factor(trainData$Embarked,
+                            levels = c("C", "Q", "S"),
+                            labels = c("Cherbourg",
+                                       "Queenstown",
+                                       "Southampton"))
+
+testData$Pclass = factor(testData$Pclass,
+                         levels = c(1,2,3),
+                         labels = c("Primera clase",
+                                    "Segunda clase",
+                                    "Tercera clase"))
+testData$Sex = factor(testData$Sex,
+                       levels = c("male","female"),
+                       labels = c("Masculino", "Femenino"))
+testData$Embarked = factor(testData$Embarked,
+                            levels = c("C", "Q", "S"),
+                            labels = c("Cherbourg",
+                                       "Queenstown",
+                                       "Southampton"))
+```
+
+### Nuevo Formato de la data
+
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 filasTrain  = dim(trainData)[1]
@@ -366,17 +528,14 @@ columTest  = length(testData)
 
 ```
 
-
-### Nuevo Formato de la data
-
 Nuesta data **test**, ahora presenta `r filasTest` registros (filas) que se corresponden a las reseñas y `r columTest` variables (columnas) que los caracterizan.
 
  **Atributo**    |    **Descripción**   
 -----------------|--------------------------------------------------------------------------
  **Pclass** | Clase Pasajero (1=primera Clase; 2=Segunda Clase; 3=Tercera Clase) 
  **Sex** | Sexo 
- **SibSp** | Número de hermanos/cónyuges a bordo 
- **Parch** | Número de padres/hijos a bordo 
+ **SibSp** | Presencia de hermanos/cónyuges a bordo 
+ **Parch** | Presencia de padres/hijos a bordo 
  **Fare** | Tarifa de pasajero 
  **Embarked** | Puerto de embarque (C=Cherbourg; Q=Queenstown; S=Southampton) 
  **Rango_Age** | Rango de Edad 
@@ -389,13 +548,13 @@ Nuesta data **train**, ahora presenta `r filasTest` registros (filas) que se cor
 -----------------|--------------------------------------------------------------------------
  **Pclass** | Clase Pasajero (1=primera Clase; 2=Segunda Clase; 3=Tercera Clase) 
  **Sex** | Sexo 
- **SibSp** | Número de hermanos/cónyuges a bordo 
- **Parch** | Número de padres/hijos a bordo 
+ **Age** | Edad 
+ **SibSp** | Presencia de hermanos/cónyuges a bordo 
+ **Parch** | Presencia de padres/hijos a bordo 
  **Fare** | Tarifa de pasajero 
  **Embarked** | Puerto de embarque (C=Cherbourg; Q=Queenstown; S=Southampton) 
  **Rango_Age** | Rango de Edad 
- **Sobreviviente** | Indica si el pasajero sobrevició o no al accidente SI-NO
-
+ **Sobreviviente** | Indica si el pasajero sobrevivió o no al accidente SI-NO
 
 
 Observamos los datos discretizados.
@@ -424,45 +583,63 @@ grid.arrange(plotTrbyAge,plotTebyAge,ncol=2)
 
 ```
 
-
-
 ### Procesos de análisis visuales del juego de datos
 
 Nos proponemos analizar las relaciones entre las diferentes variables
 del juego de datos para ver si se relacionan y como.
 
-Visualizamos la relaciones entre variable 
+Visualizamos la relaciones entre las variables categóricas y el atributo sobrevivencia.
+
 
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
-plotTrbySex1 <- ggplot(data=trainData[1:filasTrain,],aes(x=Sex,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables genero y sobrevivencia")
+plotTrbySex1 <- ggplot(trainData,aes(x=Sex,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables genero y sobrevivencia")
 
+plotTrbySex2 <- ggplot(trainData,aes(x=Sex,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables genero y sobrevivencia")
 
-plotTrbySex2 <- ggplot(data=trainData[1:filasTrain,],aes(x=Sex,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables genero y sobrevivencia")
+plotTrbyAge1 <- ggplot(trainData,aes(x=Rango_Age,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables Rango Edad y sobrevivencia")
 
-
-plotTrbyAge1 <- ggplot(data=trainData[1:filasTrain,],aes(x=Rango_Age,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables Rango Edad y sobrevivencia")
-
-plotTrbyAge2 <- ggplot(data=trainData[1:filasTrain,],aes(x=Rango_Age,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Rango Edad y sobrevivencia")
-
-plotTrbyCla <- ggplot(data=trainData[1:filasTrain,],aes(x=Pclass,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables Pclass y sobrevivencia")
-
-plotTrbyEmb <- ggplot(data=trainData[1:filasTrain,],aes(x=Embarked,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Puerto de Embarque y sobrevivencia")
+plotTrbyAge2 <- ggplot(trainData,aes(x=Rango_Age,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Rango Edad y sobrevivencia")
 
 grid.arrange(plotTrbySex1,plotTrbySex2,plotTrbyAge1,plotTrbyAge2,ncol=2)
 
+plotTrbyCla1 <- ggplot(trainData,aes(x=Pclass,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables Pclass y sobrevivencia")
 
-#grid.newpage()
+plotTrbyCla2 <- ggplot(trainData,aes(x=Pclass,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Pclass y sobrevivencia")
 
-plotTrbyCla1 <- ggplot(data=trainData[1:filasTrain,],aes(x=Pclass,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables Pclass y sobrevivencia")
+plotTrbyEmb1 <- ggplot(trainData,aes(x=Embarked,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables Puerto de Embarque y sobrevivencia")
 
-plotTrbyCla2 <- ggplot(data=trainData[1:filasTrain,],aes(x=Pclass,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Pclass y sobrevivencia")
-
-plotTrbyEmb1 <- ggplot(data=trainData[1:filasTrain,],aes(x=Embarked,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables Puerto de Embarque y sobrevivencia")
-
-plotTrbyEmb2 <- ggplot(data=trainData[1:filasTrain,],aes(x=Embarked,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Puerto de Embarque y sobrevivencia")
-
+plotTrbyEmb2 <- ggplot(trainData,aes(x=Embarked,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Puerto de Embarque y sobrevivencia")
 
 grid.arrange(plotTrbyCla1,plotTrbyCla2,plotTrbyEmb1,plotTrbyEmb2,ncol=2)
+
+```
+
+
+Ahora visualizaremos las variables familiares y su relación con la supervivencia.
+
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+plotTrbySib1 <- ggplot(trainData,aes(x=SibSp,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables SibSp y sobrevivencia")
+
+
+plotTrbySib2 <- ggplot(trainData,aes(x=SibSp,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables SibSp y sobrevivencia")
+
+
+plotTrbyPar1 <- ggplot(trainData,aes(x=Parch,fill=Sobreviviente))+geom_bar(position="fill")+ylab("Sobreviviente")+ggtitle("Relación entre las variables Parch y sobrevivencia")
+
+plotTrbyPar2 <- ggplot(trainData,aes(x=Parch,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Parch y sobrevivencia")
+
+grid.arrange(plotTrbySib1,plotTrbySib2,plotTrbyPar1,plotTrbyPar2,ncol=2)
+
+
+
+```
+
+
+Por último, realizaremos un gráfico de caja para la variable Fare en cada categoría de la variable supervivencia.
+
+```{r}
+ggplot(trainData,aes(x=Sobreviviente,y=Fare))+geom_boxplot()+ylab("Precio del boleto")+ggtitle("Relación entre las variables Parch y sobrevivencia")
 
 ```
 
@@ -470,7 +647,7 @@ grid.arrange(plotTrbyCla1,plotTrbyCla2,plotTrbyEmb1,plotTrbyEmb2,ncol=2)
 
 ## Conclusiones previas.
 
-De acuerdo a los graficos obtenidos, Existe una grán posibilidad de sobrevivir, si el pasajeto, es mujer, es menor de 60 años, tiene un ticket de primera clase y embarca en el puerto de Cherbourg. 
+De acuerdo a los graficos obtenidos, Existe una grán posibilidad de sobrevivir, si el pasajero, es mujer, es menor de 60 años, tiene un ticket de primera clase, embarca en el puerto de Cherbourg, tiene familiares a bordo y/o si la tarifa pagada fue de mayor precio.
 
 
 ------------------------------------------------------------------------
@@ -479,28 +656,182 @@ De acuerdo a los graficos obtenidos, Existe una grán posibilidad de sobrevivir,
 ## Fase de Modelado.
 
 En esta fase se construirán y evaluarán varios modelos, se probarán
-algoritmos y técnicas hasta encontrar un modelo adecuado. 
+algoritmos y técnicas hasta encontrar un modelo adecuado.
+
+Las conclusiones preliminares de la sección anterior fueron realiadas en función de la observación de los gráficos generados. No obstante, es necesario aplicar procedimientos de inferencia para determinar si las diferencias visualizadas son estadísticamente significativas. Nos concentraremos en 3 procedimientos:
+
+1) Se realizarán pruebas para comparar las medias de la tarifa del pasajero en cada categoría de la variable supervivencia y las medias de la edad del pasajero en cada categoría de la variable supervivencia.
+
+2) Se realizará una prueba chicuadrado para determinar dependencia entre el sexo y la sobrevivencia, entre el lugar de embarque y la sobrevivencia, y entre las variables familiares y la sobrevivencia.
+
+3) Se entrenará un modelo de árbol de decisión para predecir la sobrevivencia de los pasajeros en función de las variables analizadas.
+
+Respecto de la prueba de comparación de medias, es necesario en primer lugar observar si los datos son normales y homocedásticos para determinar si puede aplicarse la prueba t o, en caso de que no se satisfagan las condiciones, aplicar algún procedimiento no paramétrico.
+
+Se evaluará la normalidad de la variable Fair en cada categoría mediante la prueba de Shapiro Wilk.
+
+```{r}
+shapiro.test(trainData$Fare[trainData$Sobreviviente=="Sí"])
+shapiro.test(trainData$Fare[trainData$Sobreviviente=="No"])
+```
+
+Puede observarse que el valor p en ambos test arroja un valor muy cercano a cero. En este caso la hipótesis de normalidad es rechazada en ambos casos.
+
+Procederemos a evaluar la homocedasticidad. Como los datos no son normales, se ha elegido en este caso la prueba de Leneve.
+
+```{r}
+leveneTest(trainData$Fare, trainData$Sobreviviente)
+```
+
+El valor p de la prueba de Leneve indica que la hipótesis nula de homocedasticidad es rechazada.
+
+Como los datos son heterocedásticos y no normales, se realizará una prueba U de Wilcoxon - Mann - Whitney para determinar diferencia significativa entre el precio de la tarifa pagada por los sobrevivientes y quienes murieron en la tragedia.
+
+```{r}
+wilcox.test(trainData$Fare[trainData$Sobreviviente=="Sí"],
+            trainData$Fare[trainData$Sobreviviente=="No"])
+```
+
+El valor p de la prueba U indica que la hipótesis de igual distribución entre ambos grupos es rechazada.
+
+Por lo tanto, existe evidencia suficiente para descartar la hipótesis que sobrevivientes y fallecidos hayan pagado, en promedio, la misma tarifa.
+
+Realizaremos el mismo proceso para la variable Age.
+
+```{r}
+shapiro.test(trainData$Age[trainData$Sobreviviente=="Sí"])
+shapiro.test(trainData$Age[trainData$Sobreviviente=="No"])
+```
+
+La edad tampoco sigue una distribución normal. Se prueba la homocedasticidad:
+
+```{r}
+leveneTest(trainData$Age, trainData$Sobreviviente)
+```
+
+A un nivel de significancia de 0,05, los datos son heterocedásticos. Se realiza la prueba U:
+
+```{r}
+wilcox.test(trainData$Age[trainData$Sobreviviente=="Sí"],
+            trainData$Age[trainData$Sobreviviente=="No"])
+```
+
+A un nivel de significancia de 0,05, existen diferencias en la distribución de la edad entre sobrevivientes y fallecidos.
+
+Procederemos ahora a evaluar con una prueba chicuadardo la relación entre el sexo y la supervivencia
+
+```{r}
+chisq.test(trainData$Sobreviviente,trainData$Sex)
+```
+
+El valor p cercano a cero indica que se rechaza la hipótesis nula de independencia entre ambas variables. Es decir, existe relación estadísticamente significativa entre el sexo de la persona y su probabilidad de supervivencia.
+
+Cabe destacar que en este caso es posible realizar la prueba chicuadrado, ya que los valores esperados en cada celda de la tabla de contingencia es mayor a 5:
+
+```{r}
+chisq.test(trainData$Sobreviviente,trainData$Sex)$expected
+```
+
+Por lo que no fue necesario reemplazar esta prueba por el test exacto de Fisher.
+
+Se realiza la prueba chicuadrado para las demás variabes categóricas (para no extender este documento, se han omitido las comprobaciones sobre los valores esperados)
+
+```{r}
+chisq.test(trainData$Sobreviviente,trainData$SibSp)
+chisq.test(trainData$Sobreviviente,trainData$Parch)
+chisq.test(trainData$Sobreviviente,trainData$Embarked)
+```
+
+Puede observarse que se rechaza la hipótesis nula en las 3 pruebas, indicando que hay relación entre la supervivencia y las 3 variables analizadas.
+
+Por último, entrenaremos un modelo de árbol de decisión. Cabe señalar que dadas las características categóricas de la mayoría de las variables, se optó por este procedimiento en vez de realizar una regresión logística.
+
+```{r}
+trainData2 = select(trainData,-Rango_Age)
+arbol = rpart(Sobreviviente ~ ., trainData2)
+rpart.plot(arbol)
+```
+
+El modelo entrenado contiene las variables sexo, edad, clase y tarifa. El árbol resultante plantea las siguientes reglas de decisión:
+
+Sexo femenino y no es de tercera clase --> Sobrevive
+Sexo femenino de tercera clase que pagó menos de 23 de tarifa y tiene menos de 25 años --> Sobrevive
+Sexo masculino menor de 13 años que no es de tercera clase --> Sobrevive
+Sexo masculino de tercera clase que pagó menos de 21 de tarifa --> Sobrevive
+
+La natriz de confusión del modelo sobre los datos de entrenamiento indica que el modelo logra clasificar correctamete el 84,96% de los casos, con una sensibilidad del 94,54% y 69,59%.
+
+```{r}
+predic = predict(arbol,trainData,type="class")
+confusionMatrix(predic, trainData$Sobreviviente)
+```
+
+Claramente es un modelo que puede perfeccionarse, ya sea aplicando otra técnica para crear árboles de decisión o buscando otro modelo má complejo, como redes neuronales, por ejemplo. Sin embargo, consideramos que este modelo, además de todo lo demás realizado, cumple con el objetivo de la práctica, por lo que lo aplicaremos al conjunto de prueba.
 
 
-## Evaluación
-
-En esta fase se evaluará si el modelo, se adapta a lo esperado.
-
-
-## Implantación o despliegue.
-
-Esta fase es donde se entrega un objeto, con el cual, el cliente ya
-puede obtener resultados.
+## Resolución del problema
 
 ------------------------------------------------------------------------
 
+Se aplicará el modelo de árbol de decisión generado al conjunto de prueba. Para ello, es necesario
+
+Como este conjunto de datos no tiene el valor real de la sobrevivencia, no podremos evaluarlo mediante una matriz de confusión, pero sí se generarán tablas de contingencia para observar las predicciones realizadas.
+
+```{r}
+testData$predic = predict(arbol, testData, type="class")
+table(testData$predic)
+```
+
+Según la predicción, 119 personas del conjunto de prueba sobrevivirían y 299 no.
+
+Los siguientes gráficos muestran la distribución de la predicción de sobrevivientes y fallecidos en las diferentes variables categóricas
+
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+plotTrbySex1 <- ggplot(testData,aes(x=Sex,fill=predic))+geom_bar(position="fill")+ylab("predic")+ggtitle("Relación entre las variables genero y sobrevivencia")
+
+plotTrbySex2 <- ggplot(testData,aes(x=Sex,fill=predic))+geom_bar()+ylab("predic")+ggtitle("Relación entre las variables genero y sobrevivencia")
+
+plotTrbyAge1 <- ggplot(testData,aes(x=Rango_Age,fill=predic))+geom_bar(position="fill")+ylab("predic")+ggtitle("Relación entre las variables Rango Edad y sobrevivencia")
+
+plotTrbyAge2 <- ggplot(testData,aes(x=Rango_Age,fill=predic))+geom_bar()+ylab("predic")+ggtitle("Relación entre las variables Rango Edad y sobrevivencia")
+
+grid.arrange(plotTrbySex1,plotTrbySex2,plotTrbyAge1,plotTrbyAge2,ncol=2)
+
+plotTrbyCla1 <- ggplot(testData,aes(x=Pclass,fill=predic))+geom_bar(position="fill")+ylab("predic")+ggtitle("Relación entre las variables Pclass y sobrevivencia")
+
+plotTrbyCla2 <- ggplot(testData,aes(x=Pclass,fill=predic))+geom_bar()+ylab("predic")+ggtitle("Relación entre las variables Pclass y sobrevivencia")
+
+plotTrbyEmb1 <- ggplot(testData,aes(x=Embarked,fill=predic))+geom_bar(position="fill")+ylab("predic")+ggtitle("Relación entre las variables Puerto de Embarque y sobrevivencia")
+
+plotTrbyEmb2 <- ggplot(testData,aes(x=Embarked,fill=predic))+geom_bar()+ylab("predic")+ggtitle("Relación entre las variables Puerto de Embarque y sobrevivencia")
+
+grid.arrange(plotTrbyCla1,plotTrbyCla2,plotTrbyEmb1,plotTrbyEmb2,ncol=2)
+
+plotTrbySib1 <- ggplot(testData,aes(x=SibSp,fill=predic))+geom_bar(position="fill")+ylab("predic")+ggtitle("Relación entre las variables SibSp y sobrevivencia")
 
 
+plotTrbySib2 <- ggplot(testData,aes(x=SibSp,fill=predic))+geom_bar()+ylab("predic")+ggtitle("Relación entre las variables SibSp y sobrevivencia")
 
 
+plotTrbyPar1 <- ggplot(testData,aes(x=Parch,fill=predic))+geom_bar(position="fill")+ylab("predic")+ggtitle("Relación entre las variables Parch y sobrevivencia")
+
+plotTrbyPar2 <- ggplot(testData,aes(x=Parch,fill=predic))+geom_bar()+ylab("predic")+ggtitle("Relación entre las variables Parch y sobrevivencia")
+
+grid.arrange(plotTrbySib1,plotTrbySib2,plotTrbyPar1,plotTrbyPar2,ncol=2)
+
+```
+
+Puede visualizarse que el modelo predice que los sobrevivientes serán principalmente mujeres, menores de 20 años, que poseen boletos de primera clase, con familiares a bordo y/o que o embarcaron en Queenstown.
+
+Finalmente, exportaremos ambos dataframes en archivos csv
+
+```{r}
+write.csv(trainData,"trainMod.csv")
+write.csv(testData,"testMod.csv")
+```
 
 
-
+## Tabla de contribuciones
 
 
 
