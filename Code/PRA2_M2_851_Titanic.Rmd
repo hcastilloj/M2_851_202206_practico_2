@@ -3,6 +3,10 @@ title: 'M2.851 - Tipología y ciclo de vida de los datos: Practico 2'
 author: "Autores: Gabriel Álvarez Morgado y Héctor Alejandro Castillo Jeria"
 date: "Junio 2022"
 output:
+  pdf_document:
+    highlight: zenburn
+    toc: yes
+  word_document: default
   html_document:
     highlight: default
     number_sections: yes
@@ -11,10 +15,6 @@ output:
     toc_depth: 2
     includes:
       in_header: UOC-header.html
-  word_document: default
-  pdf_document:
-    highlight: zenburn
-    toc: yes
 editor_options: 
   markdown: 
     wrap: 72
@@ -81,7 +81,7 @@ Además, se pretende crear modelos predictivos para emplearlos en el set de dato
 
 La muestra con la que trabajaremos corresponde a los datos de pasajeros del **RMS Titanic**, famoso transatlantico que sufre un accidente y se hunde en su viaje inaugural, el día 15 de Abril de 1912, donde fallecen 1502 de sus 2224 pasajeros y tripulantes.
 
-Este juego de datos se encuentra en los archivos **train.csv** y **test.csv** ambos archivos, obtenido desde Kaggle **"Titanic - Machine Learning from Disaster"** <https://www.kaggle.com/competitions/titanic>
+Este juego de datos se encuentra en los archivos **train.csv** y **test.csv** ambos archivos, obtenido desde Kaggle [**"Titanic - Machine Learning from Disaster"**](https://www.kaggle.com/competitions/titanic)
 
 El archivo **train.csv** posee la información de los pasajeros, lo que permitirá entrenar nuestro modelo, para emplear luego el archivo **test.csv** que contiene información de pasajeros, para predecir si los pasajeros de esta muestra sobreviven al hundimiento del Titanic, de acuerdo a ciertos factores que obtendremos en el desarrollo de práctico.
 
@@ -825,10 +825,18 @@ write.csv(testData,"testMod.csv")
 ```
 
 
+------------------------------------------------------------------------
+
 ## Tabla de contribuciones
 
+Tabla con los datos de entrenamiento: 
+[trainMod.csv](https://github.com/hcastilloj/M2_851_202206_practico_2/blob/main/Data/trainMod.csv)
+
+Tabla con los datos de pruebas: 
+[testMod.csv](https://github.com/hcastilloj/M2_851_202206_practico_2/blob/main/Data/testMod.csv)
 
 
+------------------------------------------------------------------------
 
 
 
