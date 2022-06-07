@@ -3,10 +3,6 @@ title: 'M2.851 - Tipología y ciclo de vida de los datos: Practico 2'
 author: "Autores: Gabriel Álvarez Morgado y Héctor Alejandro Castillo Jeria"
 date: "Junio 2022"
 output:
-  pdf_document:
-    highlight: zenburn
-    toc: yes
-  word_document: default
   html_document:
     highlight: default
     number_sections: yes
@@ -15,6 +11,10 @@ output:
     toc_depth: 2
     includes:
       in_header: UOC-header.html
+  word_document: default
+  pdf_document:
+    highlight: zenburn
+    toc: yes
 editor_options: 
   markdown: 
     wrap: 72
@@ -542,7 +542,7 @@ Nuesta data **test**, ahora presenta `r filasTest` registros (filas) que se corr
 
 
 
-Nuesta data **train**, ahora presenta `r filasTest` registros (filas) que se corresponden a las reseñas y `r columTrain` variables (columnas) que los caracterizan.
+Nuesta data **train**, ahora presenta `r filasTrain` registros (filas) que se corresponden a las reseñas y `r columTrain` variables (columnas) que los caracterizan.
 
  **Atributo**    |    **Descripción**   
 -----------------|--------------------------------------------------------------------------
@@ -570,14 +570,9 @@ Vemos como los datos se agrupan por segmento de edad.
 ```{r}
 grid.newpage()
 
-#plotTrbyAge <- ggplot(trainData$Rango_Age,main="train. Número de pasajeros por grupos de #edad",xlab="Edad", ylab="Cantidad",col = "ivory")
-
-#plotTebyAge <-ggplot(testData$Rango_Age,main="test. Número de pasajeros por grupos de #edad",xlab="Edad", ylab="Cantidad",col = "ivory")
-
 plotTrbyAge <- ggplot(trainData,aes(Rango_Age))+geom_bar() +labs(x="Rango Edad", y="Pasajero")+ guides(fill=guide_legend(title=""))+ scale_fill_manual(values=c("blue","#008000"))+ggtitle("Datos train")
 
 plotTebyAge <- ggplot(testData,aes(Rango_Age))+geom_bar() +labs(x="Rango Edad", y="Pasajero")+ guides(fill=guide_legend(title=""))+ scale_fill_manual(values=c("blue","#008000"))+ggtitle("Datos test")
-
 
 grid.arrange(plotTrbyAge,plotTebyAge,ncol=2)
 
@@ -630,7 +625,6 @@ plotTrbyPar1 <- ggplot(trainData,aes(x=Parch,fill=Sobreviviente))+geom_bar(posit
 plotTrbyPar2 <- ggplot(trainData,aes(x=Parch,fill=Sobreviviente))+geom_bar()+ylab("Sobreviviente")+ggtitle("Relación entre las variables Parch y sobrevivencia")
 
 grid.arrange(plotTrbySib1,plotTrbySib2,plotTrbyPar1,plotTrbyPar2,ncol=2)
-
 
 
 ```
@@ -832,7 +826,6 @@ write.csv(testData,"testMod.csv")
 
 
 ## Tabla de contribuciones
-
 
 
 
